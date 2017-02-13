@@ -43,24 +43,33 @@ def endpoint(request):
 
     #
     if message['state'] == 'PROGRESSING':
-        job = EncodeJob.objects.get(pk=message['jobId'])
-        job.message = 'Progress'
-        job.state = 1
-        job.save()
+        try:
+            job = EncodeJob.objects.get(pk=message['jobId'])
+            job.message = 'Progress'
+            job.state = 1
+            job.save()
+        except EncodeJob.DoesNotExist:
+            job = None
 
         transcode_onprogress.send(sender=None, job=job, message=message)
     elif message['state'] == 'COMPLETED':
-        job = EncodeJob.objects.get(pk=message['jobId'])
-        job.message = 'Success'
-        job.state = 4
-        job.save()
+        try:
+            job = EncodeJob.objects.get(pk=message['jobId'])
+            job.message = 'Success'
+            job.state = 4
+            job.save()
+        except EncodeJob.DoesNotExist:
+            job = None
 
         transcode_oncomplete.send(sender=None, job=job, message=message)
     elif message['state'] == 'ERROR':
-        job = EncodeJob.objects.get(pk=message['jobId'])
-        job.message = message['messageDetails']
-        job.state = 2
-        job.save()
+        try:
+            job = EncodeJob.objects.get(pk=message['jobId'])
+            job.message = message['messageDetails']
+            job.state = 2
+            job.save()
+        except EncodeJob.DoesNotExist:
+            job = None
 
         transcode_onerror.send(sender=None, job=job, message=message)
 
