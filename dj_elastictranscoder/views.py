@@ -65,7 +65,7 @@ def endpoint(request):
     elif message['state'] == 'ERROR':
         try:
             job = EncodeJob.objects.get(pk=message['jobId'])
-            job.message = message['messageDetails']
+            job.message = message.get('messageDetails', message.get('statusDetail', 'Unknown error'))
             job.state = 2
             job.save()
         except EncodeJob.DoesNotExist:
