@@ -22,7 +22,6 @@ def endpoint(request):
     except ValueError:
         return HttpResponseBadRequest('Invalid JSON')
 
-
     # handle SNS subscription
     if data['Type'] == 'SubscriptionConfirmation':
         subscribe_url = data['SubscribeURL']
@@ -41,7 +40,13 @@ def endpoint(request):
     except ValueError:
         assert False, data['Message']
 
-    #
+    try:
+        # Turn the dictionary into a readable string format
+        formatted_str_message = json.dumps(message, indent=2)
+    except (TypeError, ValueError):
+        # Couldn't format it, so set it to the raw message
+        formatted_str_message = data['Message']
+
     if message['state'] == 'PROGRESSING':
         try:
             job = EncodeJob.objects.get(pk=message['jobId'])
@@ -66,6 +71,7 @@ def endpoint(request):
         try:
             job = EncodeJob.objects.get(pk=message['jobId'])
 
+            """
             error_message = 'messageDetails' in message and message['messageDetails'] or ''
             # when you convert HLS there is no messageDetails,
             # but there are list of segements and statusDetail for each item
@@ -76,6 +82,8 @@ def endpoint(request):
                 error_message = error_segment and error_segment['statusDetail'] or 'Error'
 
             job.message = error_message
+            """
+            job.message = formatted_str_message
             job.state = 2
             job.save()
         except EncodeJob.DoesNotExist:
