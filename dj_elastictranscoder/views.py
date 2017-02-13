@@ -65,7 +65,17 @@ def endpoint(request):
     elif message['state'] == 'ERROR':
         try:
             job = EncodeJob.objects.get(pk=message['jobId'])
-            job.message = message.get('messageDetails', message.get('statusDetail', 'Unknown error'))
+
+            error_message = 'messageDetails' in message and message['messageDetails'] or ''
+            # when you convert HLS there is no messageDetails,
+            # but there are list of segements and statusDetail for each item
+
+            if not error_message and 'outputs' in message and len(message['outputs']):
+                # let's find first segment with error response
+                error_segment = next((i for i in message['outputs'] if i['status'] == 'Error'), None)
+                error_message = error_segment and error_segment['statusDetail'] or 'Error'
+
+            job.message = error_message
             job.state = 2
             job.save()
         except EncodeJob.DoesNotExist:
